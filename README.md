@@ -10,8 +10,8 @@ agent in the loop.
 The tool separates two concerns deliberately:
 
 1. **Deterministic enumeration/brute-force logic** (plain Python, fully
-   unit-tested) — this must be reliable, so it does not depend on an LLM.
-2. **AI decision-making** — used only where judgment genuinely helps:
+   unit-tested): this must be reliable, so it does not depend on an LLM.
+2. **AI decision-making**: used only where judgment genuinely helps,
    deciding which fallback technique to try next when the primary one
    fails, and writing a plain-English summary of the findings for a
    security report.
@@ -38,22 +38,22 @@ cli.py
 ```
 
 **Modules:**
-- `wp_vuln_tool/http_client.py` — shared `requests` session with timeouts and
+- `wp_vuln_tool/http_client.py`: shared `requests` session with timeouts and
   exception handling, so network failures never crash the tool.
-- `wp_vuln_tool/enum_rest_api.py` — queries `/wp-json/wp/v2/users`, the
+- `wp_vuln_tool/enum_rest_api.py`: queries `/wp-json/wp/v2/users`, the
   unauthenticated WordPress REST API endpoint that lists user objects by
   default.
-- `wp_vuln_tool/enum_author_archive.py` — walks `?author=1..10`, reading the
+- `wp_vuln_tool/enum_author_archive.py`: walks `?author=1..10`, reading the
   `Location` header of the 301/302 redirect to `/author/<username>/` to
   recover usernames even when the REST API is restricted.
-- `wp_vuln_tool/enum_login_error.py` — bonus technique: distinguishes
+- `wp_vuln_tool/enum_login_error.py`: bonus technique, distinguishes
   WordPress's default "unknown username" vs "incorrect password" login
   error messages to confirm a username exists.
-- `wp_vuln_tool/bruteforce.py` — attempts a short list of common passwords
+- `wp_vuln_tool/bruteforce.py`: attempts a short list of common passwords
   against `wp-login.php` for a discovered username, with a 1-second
   courtesy delay between attempts, detecting success via the
   `wordpress_logged_in_*` cookie or redirect to `/wp-admin/`.
-- `agent/orchestrator.py` — the agent loop. Runs REST API enumeration
+- `agent/orchestrator.py`: the agent loop. Runs REST API enumeration
   first; if it fails, asks the AI (via the [Hermes Agent](https://hermes-agent.nousresearch.com)
   library, routed to a free model through OpenRouter) which fallback
   technique to try; runs brute-force against the likely admin account;
@@ -64,10 +64,10 @@ cli.py
 Uses [Hermes Agent](https://github.com/NousResearch/hermes-agent) as a
 Python library (`from run_agent import AIAgent`), configured with
 `model="openrouter/free"` so it routes to a genuinely free model via
-[OpenRouter](https://openrouter.ai) — no cost to run. The `terminal` and
+[OpenRouter](https://openrouter.ai), at no cost to run. The `terminal` and
 `browser` toolsets are explicitly disabled since the agent here is only
 used for two things: a planning decision (which technique to try next) and
-a natural-language summary — not for executing actions itself. This keeps
+a natural-language summary, not for executing actions itself. This keeps
 the integration simple, predictable, and easy to reason about compared to
 giving the agent open-ended tool-execution access.
 
@@ -138,7 +138,7 @@ JSON to `results.json`.
 ## Limitations and trade-offs
 
 - The brute-force password list is intentionally small (10 common
-  passwords) and rate-limited with a 1-second delay between attempts —
+  passwords) and rate-limited with a 1-second delay between attempts,
   appropriate for a demo/authorized test, not an exhaustive real-world
   list.
 - Author-archive enumeration assumes pretty permalinks ("Post name"
@@ -146,7 +146,7 @@ JSON to `results.json`.
   technique relies on does not occur.
 - The REST API technique won't find anything on a site that has
   deliberately restricted the `/wp-json/wp/v2/users` endpoint (common via
-  security plugins) — the tool falls back to author-archive enumeration in
+  security plugins). The tool falls back to author-archive enumeration in
   that case, but no further fallback (e.g. login-error-based enumeration)
   is currently wired into the automatic flow; `enum_login_error.py` exists
   but is available as a standalone module rather than part of the default
@@ -156,5 +156,5 @@ JSON to `results.json`.
   planning and summary steps is not guaranteed to match a paid frontier
   model.
 - Only tested against a single, intentionally vulnerable, self-hosted
-  WordPress instance, per the assignment's ethical requirements — never
+  WordPress instance, per the assignment's ethical requirements. Never
   run against production or unauthorized targets.
